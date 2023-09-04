@@ -1,0 +1,88 @@
+syntax = "proto3";
+package stok;
+
+service Market {
+    rpc RegisterSecValue(SecValueReq) returns (stream SecValue);
+    rpc GetLowestBid(LowestBidReq) returns (LowestBid);
+    rpc GetHighestAsk(HighestAskReq) returns (HighestAsk);
+    rpc GetMarketCap(MarketCapReq) returns (MarketCap);
+    rpc PlaceAsk(Ask) returns (AskPlaced);
+    rpc PlaceBid(Bid) returns (BidPlaced);
+
+}
+
+message AccId {
+    UUID id = 1;
+}
+
+message SecId {
+    UUID id = 1;
+}
+
+message UUID {
+    string value = 1;
+}
+
+message SecValueReq {
+    SecId sec = 1;
+}
+
+message SecValue {
+    SecId sec = 1;
+    double value = 2;
+}
+
+message LowestBidReq {
+    SecId sec = 1;
+}
+
+message LowestBid {
+    optional double price = 1;
+}
+
+message HighestAskReq {
+    SecId sec = 1;
+}
+
+message HighestAsk {
+    optional double price = 1;
+}
+
+message MarketCapReq {
+    SecId sec = 1;
+}
+
+message MarketCap {
+    double marketcap = 1;
+}
+
+message AccountValue {
+    AccId acc = 1;
+    SecId sec = 2;
+}
+
+message AccountValueReq {
+    double value = 1;
+}
+
+message Ask {
+    AccId acc = 1;
+    SecId sec = 2;
+    double price = 3;
+}
+
+message AskPlaced {
+    double price = 1;
+
+}
+
+message Bid {
+    AccId acc = 1;
+    SecId sec = 2;
+    double price = 3;
+}
+
+message BidPlaced {
+    double price = 1;
+}
+
