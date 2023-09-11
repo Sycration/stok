@@ -3,11 +3,14 @@ package stok;
 
 service Market {
     rpc RegisterSecValue(SecValueReq) returns (stream SecValue);
+    rpc ListSecurities(ListSecsReq) returns (SecList);
     rpc GetLowestBid(LowestBidReq) returns (LowestBid);
     rpc GetHighestAsk(HighestAskReq) returns (HighestAsk);
     rpc GetMarketCap(MarketCapReq) returns (MarketCap);
     rpc PlaceAsk(Ask) returns (AskPlaced);
     rpc PlaceBid(Bid) returns (BidPlaced);
+    rpc CreateAccount(CreateAccReq) returns (AccId);
+    rpc CreateSecurity(CreateSecReq) returns (CreateSecResponse);
 
 }
 
@@ -17,6 +20,24 @@ message AccId {
 
 message SecId {
     UUID id = 1;
+}
+
+message CreateSecResponse {
+    SecId security = 1;
+    AccId owner_acct = 2;
+}
+
+message SecList {
+    repeated SecId list = 1;
+}
+
+message ListSecsReq {}
+
+message CreateAccReq {}
+
+message CreateSecReq {
+    uint64 founding_shares = 1;
+    double founding_price = 2;
 }
 
 message UUID {

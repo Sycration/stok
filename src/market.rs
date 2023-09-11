@@ -186,7 +186,7 @@ impl Market {
     //     self.thread.join().unwrap();
     // }
 
-    pub fn create_account(&mut self) -> AccId {
+    pub fn create_account(&self) -> AccId {
         let id = AccId(Uuid::new_v4());
         let accs = Arc::clone(&self.accounts);
         accs.insert(id, Default::default());
@@ -232,8 +232,13 @@ impl Market {
         }
     }
 
+    pub fn list_securities(&self) -> Vec<SecId> {
+        let map = Arc::as_ref(&self.securities);
+        map.iter().map(|s|s.pair().0.clone()).collect::<Vec<_>>()
+    }
+
     pub fn create_security(
-        &mut self,
+        &self,
         founding_shares: usize,
         founding_price: f64,
     ) -> (SecId, AccId) {

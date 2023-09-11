@@ -48,10 +48,59 @@ pub struct MyGreeter {
     market: crate::market::Market,
 }
 
-
 #[tonic::async_trait]
 impl market_server::Market for MyGreeter {
     type RegisterSecValueStream = ResponseStream;
+
+    async fn list_securities(
+        &self,
+        _request: tonic::Request<ListSecsReq>,
+    ) -> std::result::Result<tonic::Response<SecList>, tonic::Status> {
+        let secs = self.market.list_securities().iter().map(|i| stok::SecId {
+            id: Some(stok::Uuid {
+                value: i.0.to_string(),
+            }),
+        }).collect::<Vec<_>>();
+
+        Ok(Response::new(SecList { list: secs }))
+    }
+
+    async fn create_account(
+        &self,
+        _request: tonic::Request<CreateAccReq>,
+    ) -> std::result::Result<tonic::Response<stok::AccId>, tonic::Status> {
+        let acc = self.market.create_account();
+
+        return Ok(Response::new(stok::AccId {
+            id: Some(stok::Uuid {
+                value: acc.0.to_string(),
+            }),
+        }));
+    }
+
+    async fn create_security(
+        &self,
+        request: tonic::Request<CreateSecReq>,
+    ) -> std::result::Result<tonic::Response<stok::CreateSecResponse>, tonic::Status> {
+        let request = request.into_inner();
+        let (founding_shares, founding_price) = (request.founding_shares, request.founding_price);
+        let (sec, acc) = self
+            .market
+            .create_security(founding_shares as usize, founding_price);
+
+        return Ok(Response::new(stok::CreateSecResponse {
+            owner_acct: Some(stok::AccId {
+                id: Some(stok::Uuid {
+                    value: acc.0.to_string(),
+                }),
+            }),
+            security: Some(stok::SecId {
+                id: Some(stok::Uuid {
+                    value: sec.0.to_string(),
+                }),
+            }),
+        }));
+    }
 
     async fn register_sec_value(
         &self,
@@ -92,14 +141,13 @@ impl market_server::Market for MyGreeter {
                     }),
                     value,
                 }))
-                .await {
-                    Ok(_) => {
-
-                    },
-                    Err(_) => {
-                        break;
-                    }
+                .await
+            {
+                Ok(_) => {}
+                Err(_) => {
+                    break;
                 }
+            }
         }
 
         let output_stream = ReceiverStream::new(rx);
@@ -112,7 +160,6 @@ impl market_server::Market for MyGreeter {
         &self,
         request: tonic::Request<LowestBidReq>,
     ) -> Result<tonic::Response<LowestBid>, tonic::Status> {
-
         let sec = if let Some(id) = request.into_inner().sec.map(|s| s.id).flatten() {
             if let Ok(id) = Uuid::parse_str(&id.value) {
                 id
@@ -129,7 +176,6 @@ impl market_server::Market for MyGreeter {
         let bid = self.market.get_lowest_bid_price(SecId(sec))?;
 
         Ok(Response::new(LowestBid { price: bid }))
-
     }
     async fn get_highest_ask(
         &self,
@@ -156,7 +202,6 @@ impl market_server::Market for MyGreeter {
         &self,
         request: tonic::Request<MarketCapReq>,
     ) -> Result<tonic::Response<MarketCap>, tonic::Status> {
-
         let sec = if let Some(id) = request.into_inner().sec.map(|s| s.id).flatten() {
             if let Ok(id) = Uuid::parse_str(&id.value) {
                 id
@@ -173,14 +218,13 @@ impl market_server::Market for MyGreeter {
         let marketcap = self.market.market_cap(SecId(sec))?;
 
         Ok(Response::new(MarketCap { marketcap }))
-
     }
     async fn place_ask(
         &self,
         request: tonic::Request<stok::Ask>,
     ) -> Result<tonic::Response<AskPlaced>, tonic::Status> {
         let req = request.into_inner();
-       
+
         let sec = if let Some(id) = req.sec.map(|s| s.id).flatten() {
             if let Ok(id) = Uuid::parse_str(&id.value) {
                 id
@@ -210,15 +254,13 @@ impl market_server::Market for MyGreeter {
         self.market.place_ask(AccId(acc), SecId(sec), req.price)?;
 
         Ok(Response::new(AskPlaced { price: req.price }))
-    
     }
     async fn place_bid(
         &self,
         request: tonic::Request<stok::Bid>,
     ) -> Result<tonic::Response<BidPlaced>, tonic::Status> {
-        
         let req = request.into_inner();
-       
+
         let sec = if let Some(id) = req.sec.map(|s| s.id).flatten() {
             if let Ok(id) = Uuid::parse_str(&id.value) {
                 id
@@ -248,12 +290,11 @@ impl market_server::Market for MyGreeter {
         self.market.place_bid(AccId(acc), SecId(sec), req.price)?;
 
         Ok(Response::new(BidPlaced { price: req.price }))
-
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    env::set_var("RUST_LOG", "debug");
+    env::set_var("RUST_LOG", "trace");
     env_logger::init();
     let subscriber = FmtSubscriber::builder().pretty().finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
@@ -269,7 +310,6 @@ async fn app() {
     let (tx, mut rx) = watch::channel(());
 
     let mut market = crate::Market::new(rx);
-    let (sec_id, _) = market.create_security(20, 1.0);
 
     let updater_market = market.clone();
     let update_task = tokio::spawn(async move {
