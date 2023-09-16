@@ -6,12 +6,16 @@ pub mod stok {
     tonic::include_proto!("stok");
 }
 
+#[derive(Debug)]
 enum ClientMessage {
     ConnectToServer(String),
+    ClearError,
 }
 
+#[derive(Debug)]
 enum ServerMessage {
     Error(String),
+    ClearError,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -43,6 +47,9 @@ impl Default for TemplateApp {
                 let mut client = loop {
                     let addr: String = loop {
                         if let Ok(client_msg) = client_msg_reciever.recv() {
+                            if let client_msg = ClientMessage::ClearError {
+                                server_msg_sender.send(ServerMessage::ClearError);
+                            }
                             if let ClientMessage::ConnectToServer(addr) = client_msg {
                                 break addr;
                             } else {
@@ -55,23 +62,29 @@ impl Default for TemplateApp {
                     match client {
                         Ok(c) => break c,
                         Err(e) => {
-                            server_msg_sender.send(ServerMessage::Error(e.to_string()));
+                            server_msg_sender.send(ServerMessage::Error(format!("{:#?}", e)));
                             continue;
                         }
                     }
                 };
 
-                while let Ok(msg) = client_msg_reciever.recv() {
+
+
+                for msg in client_msg_reciever.iter() {
                     match msg {
                         ClientMessage::ConnectToServer(addr) => {
                             let new_client = stok::market_client::MarketClient::connect(addr).await;
                             match new_client {
-                                Ok(c) => client = c,
+                                Ok(c) => {
+                                    client = c; },
                                 Err(e) => {
-                                    server_msg_sender.send(ServerMessage::Error(e.to_string()));
+                                    server_msg_sender.send(ServerMessage::Error(format!("{:#?}", e)));
                                 }
                             }
-                        }
+                        },
+                        ClientMessage::ClearError => {
+                            server_msg_sender.send(ServerMessage::ClearError);
+                        },
                     }
                 }
             });
@@ -119,15 +132,24 @@ impl eframe::App for TemplateApp {
             error,
         } = self;
 
-        while let Ok(msg) = rx.try_recv() {
+        for msg in rx.try_iter(){
             match msg {
                 ServerMessage::Error(e) => *error = Some(e),
+                ServerMessage::ClearError => {
+                    *error = None;
+                }
             }
         }
 
         if let Some(e) = error {
             egui::Window::new("Error").show(ctx, |ui| {
-                ui.monospace(e);
+                ui.monospace(e.as_str());
+                if ui.button("close").clicked() {
+                    tx.send(ClientMessage::ClearError).unwrap();
+                }
+
+
+
             });
         }
 
@@ -153,7 +175,6 @@ impl eframe::App for TemplateApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-
             ui.heading("eframe template");
             egui::warn_if_debug_build(ui);
         });

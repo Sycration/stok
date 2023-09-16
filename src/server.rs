@@ -324,7 +324,7 @@ async fn app() {
         }
     });
 
-    let addr = "[::1]:50051".parse().unwrap();
+    let addr = "0.0.0.0:50051".parse().unwrap();
     let greeter = MyGreeter { market };
 
     let server = Server::builder()
