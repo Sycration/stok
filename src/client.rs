@@ -1,5 +1,6 @@
 use std::thread::{self, JoinHandle};
 
+use egui::{ScrollArea, Button, Margin, Color32, Layout};
 use tokio::runtime;
 
 pub mod stok {
@@ -147,9 +148,6 @@ impl eframe::App for TemplateApp {
                 if ui.button("close").clicked() {
                     tx.send(ClientMessage::ClearError).unwrap();
                 }
-
-
-
             });
         }
 
@@ -175,8 +173,70 @@ impl eframe::App for TemplateApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-            egui::warn_if_debug_build(ui);
+            
+        });
+
+        egui::SidePanel::right("actions_panel").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.columns(2, |ui| {
+                    ui[0].heading("As account");
+                    ui[0].separator();
+                    ui[0].heading("Holding 5");
+                    ui[0].heading("Value 25");
+
+                    ui[1].group(|ui| {
+                        ui.set_min_height(150.0);
+                        ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+                            for i in 0..100 {
+                                let mut button = Button::new(format!("Account {i}"));
+                                if i == 69 {
+                                    button = button.selected(true);
+                                }
+                                ui.add(button);
+                            }
+                        });
+                    });
+                });
+                
+            });
+            ui.separator();
+            ui.horizontal(|ui| {
+                ui.button("Place bid");
+                let mut text = "5".to_string();
+                ui.text_edit_singleline(&mut text);
+            });
+            ui.horizontal(|ui| {
+                ui.button("Place ask");
+                let mut text = "5".to_string();
+                ui.text_edit_singleline(&mut text);
+            });
+            ui.separator();
+
+
+                ui.with_layout(Layout::bottom_up(egui::Align::Min), |ui| {
+                    ui.group(|ui| {
+                        ui.menu_button("Register new account", |ui| {
+                            ui.label("Are you sure?");
+                            ui.horizontal(|ui| {
+                                ui.button("Register");
+                                if ui.button("Cancel").clicked() {
+                                    ui.close_menu();
+                                }
+                            });
+                        });
+                    ui.separator();
+                    ui.horizontal(|ui| {
+                        ui.button("Add account");
+                        let mut text = "1337H4X0R".to_string();
+                        ui.text_edit_singleline(&mut text);
+                    });
+ 
+                });
+
+            });
+
+            
+            
         });
     }
 }
