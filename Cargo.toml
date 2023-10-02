@@ -33,6 +33,8 @@ eframe = { version = "0.23.0", default-features = false, features = [
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
+egui_plot = "0.23.0"
+rand = "0.8.5"
 
 [dependencies.uuid]
 version = "1.4.1"

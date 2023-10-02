@@ -1,6 +1,11 @@
-use std::thread::{self, JoinHandle};
+use std::{
+    fmt::format,
+    thread::{self, JoinHandle},
+};
 
-use egui::{ScrollArea, Button, Margin, Color32, Layout};
+use egui::{Button, Color32, Layout, Margin, ScrollArea};
+use egui_plot::Points;
+use rand::{thread_rng, Rng, SeedableRng, rngs::StdRng};
 use tokio::runtime;
 
 pub mod stok {
@@ -69,23 +74,23 @@ impl Default for TemplateApp {
                     }
                 };
 
-
-
                 for msg in client_msg_reciever.iter() {
                     match msg {
                         ClientMessage::ConnectToServer(addr) => {
                             let new_client = stok::market_client::MarketClient::connect(addr).await;
                             match new_client {
                                 Ok(c) => {
-                                    client = c; },
+                                    client = c;
+                                }
                                 Err(e) => {
-                                    server_msg_sender.send(ServerMessage::Error(format!("{:#?}", e)));
+                                    server_msg_sender
+                                        .send(ServerMessage::Error(format!("{:#?}", e)));
                                 }
                             }
-                        },
+                        }
                         ClientMessage::ClearError => {
                             server_msg_sender.send(ServerMessage::ClearError);
-                        },
+                        }
                     }
                 }
             });
@@ -133,7 +138,7 @@ impl eframe::App for TemplateApp {
             error,
         } = self;
 
-        for msg in rx.try_iter(){
+        for msg in rx.try_iter() {
             match msg {
                 ServerMessage::Error(e) => *error = Some(e),
                 ServerMessage::ClearError => {
@@ -153,10 +158,16 @@ impl eframe::App for TemplateApp {
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
+
             egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
+                ui.label("Security");
+                ScrollArea::horizontal().show(ui, |ui| {
+                    for i in 0..10 {
+                        let mut button = Button::new(format!("Sec {i}"));
+                        if i == 5 {
+                            button = button.selected(true);
+                        }
+                        ui.add(button);
                     }
                 });
             });
@@ -171,12 +182,9 @@ impl eframe::App for TemplateApp {
             })
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            
-        });
 
-        egui::SidePanel::right("actions_panel").show(ctx, |ui| {
+
+        let right = egui::SidePanel::right("actions_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.columns(2, |ui| {
                     ui[0].heading("As account");
@@ -186,18 +194,19 @@ impl eframe::App for TemplateApp {
 
                     ui[1].group(|ui| {
                         ui.set_min_height(150.0);
-                        ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-                            for i in 0..100 {
-                                let mut button = Button::new(format!("Account {i}"));
-                                if i == 69 {
-                                    button = button.selected(true);
+                        ScrollArea::vertical()
+                            .auto_shrink([false, false])
+                            .show(ui, |ui| {
+                                for i in 0..100 {
+                                    let mut button = Button::new(format!("Account {i}"));
+                                    if i == 69 {
+                                        button = button.selected(true);
+                                    }
+                                    ui.add(button);
                                 }
-                                ui.add(button);
-                            }
-                        });
+                            });
                     });
                 });
-                
             });
             ui.separator();
             ui.horizontal(|ui| {
@@ -211,32 +220,65 @@ impl eframe::App for TemplateApp {
                 ui.text_edit_singleline(&mut text);
             });
             ui.separator();
-
-
-                ui.with_layout(Layout::bottom_up(egui::Align::Min), |ui| {
-                    ui.group(|ui| {
-                        ui.menu_button("Register new account", |ui| {
-                            ui.label("Are you sure?");
-                            ui.horizontal(|ui| {
-                                ui.button("Register");
-                                if ui.button("Cancel").clicked() {
-                                    ui.close_menu();
-                                }
-                            });
+            ui.columns(2, |ui|{
+                ui[0].vertical_centered(|ui| {
+                    ui.label("Lowest bid");
+                    ui.label("4.5");
+                });
+                ui[1].vertical_centered(|ui| {
+                    ui.label("Highest ask");
+                    ui.label("5");
+                });
+            });
+            ui.vertical_centered(|ui| {
+                ui.label("Spread");
+                ui.label("0.5")
+            });
+            ui.separator();
+            ui.with_layout(Layout::bottom_up(egui::Align::Min), |ui| {
+                ui.group(|ui| {
+                    ui.menu_button("Register new account", |ui| {
+                        ui.label("Are you sure?");
+                        ui.horizontal(|ui| {
+                            ui.button("Register");
+                            if ui.button("Cancel").clicked() {
+                                ui.close_menu();
+                            }
                         });
+                    });
                     ui.separator();
                     ui.horizontal(|ui| {
                         ui.button("Add account");
                         let mut text = "1337H4X0R".to_string();
                         ui.text_edit_singleline(&mut text);
                     });
- 
                 });
+            });
+        });
 
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            ui.columns(2, |ui|{
+                ui[1].vertical_centered(|ui| {
+                    ui.heading("Market cap");
+                    ui.heading("588005");
+                });
+                ui[0].vertical_centered(|ui| {
+                    ui.heading("Share Value");
+                    ui.heading("30");
+                });
+            });
+            egui_plot::Plot::new("ValPlot").show(ui, |ui| {
+                let mut rng = StdRng::seed_from_u64(69);
+                let mut val = 0.0;
+                let mut series = Vec::with_capacity(1000);
+                for i in 0..1000 {
+                    series.push([i as f64,val]);
+                    val += rng.gen::<f64>() - 0.5;
+                }
+                ui.line(egui_plot::Line::new(series));
             });
 
-            
-            
         });
     }
 }

@@ -56,11 +56,16 @@ impl market_server::Market for MyGreeter {
         &self,
         _request: tonic::Request<ListSecsReq>,
     ) -> std::result::Result<tonic::Response<SecList>, tonic::Status> {
-        let secs = self.market.list_securities().iter().map(|i| stok::SecId {
-            id: Some(stok::Uuid {
-                value: i.0.to_string(),
-            }),
-        }).collect::<Vec<_>>();
+        let secs = self
+            .market
+            .list_securities()
+            .iter()
+            .map(|i| stok::SecId {
+                id: Some(stok::Uuid {
+                    value: i.0.to_string(),
+                }),
+            })
+            .collect::<Vec<_>>();
 
         Ok(Response::new(SecList { list: secs }))
     }

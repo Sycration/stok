@@ -894,6 +894,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_plot"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7f33a00fe8eb1ba56535b3dbacdecc7a1365a328908a97c5f3c81bb466be72b"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2541,11 +2550,13 @@ dependencies = [
  "dashmap",
  "eframe",
  "egui",
+ "egui_plot",
  "env_logger",
  "log",
  "ordered-float",
  "prost",
  "prost-types",
+ "rand",
  "serde",
  "serde_json",
  "thiserror",

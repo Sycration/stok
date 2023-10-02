@@ -1,6 +1,7 @@
 use std::{
     collections::{BinaryHeap, HashMap},
-    sync::Arc, fmt::format,
+    fmt::format,
+    sync::Arc,
 };
 
 use dashmap::DashMap;
@@ -46,7 +47,6 @@ impl Market {
             } else {
                 debug!("No bids placed for security {}", sec_id.0);
                 Ok(None)
-
             }
         } else {
             error!(
@@ -68,7 +68,6 @@ impl Market {
             } else {
                 debug!("No asks placed for security {}", sec_id.0);
                 Ok(None)
-
             }
         } else {
             error!(
@@ -234,14 +233,10 @@ impl Market {
 
     pub fn list_securities(&self) -> Vec<SecId> {
         let map = Arc::as_ref(&self.securities);
-        map.iter().map(|s|s.pair().0.clone()).collect::<Vec<_>>()
+        map.iter().map(|s| s.pair().0.clone()).collect::<Vec<_>>()
     }
 
-    pub fn create_security(
-        &self,
-        founding_shares: usize,
-        founding_price: f64,
-    ) -> (SecId, AccId) {
+    pub fn create_security(&self, founding_shares: usize, founding_price: f64) -> (SecId, AccId) {
         let sec_id = SecId(Uuid::new_v4());
         self.securities.insert(sec_id, Security::default());
         let acc_id = self.create_account();
@@ -355,8 +350,12 @@ impl From<MarketError> for Status {
             MarketError::AccDoesNotExist(acc) => {
                 Status::failed_precondition(format!("Account {} does not exist", acc.0))
             }
-            MarketError::NoBids(sec) => Status::ok(format!("No bids are placed for security {}", sec.0)),
-            MarketError::NoAsks(sec) => Status::ok(format!("No asks are placed for security {}", sec.0)),
+            MarketError::NoBids(sec) => {
+                Status::ok(format!("No bids are placed for security {}", sec.0))
+            }
+            MarketError::NoAsks(sec) => {
+                Status::ok(format!("No asks are placed for security {}", sec.0))
+            }
         }
     }
 }
